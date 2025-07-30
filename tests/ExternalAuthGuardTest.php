@@ -9,6 +9,9 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Mockery;
+use Mockery\MockInterface;
+use Psr\Log\LoggerInterface;
 use SamYapp\LaravelExternalAuth\AuthConfig;
 use SamYapp\LaravelExternalAuth\ExternalAuthGuard;
 use SamYapp\LaravelExternalAuth\ExternalAuthServiceProvider;
@@ -56,13 +59,15 @@ class ExternalAuthGuardTest extends \Orchestra\Testbench\TestCase
         $provider = new TransientUserProvider(TransientUser::class);
         $input = ['one' => 'two', 'three' => 'four'];
         $dispatcher = app(Dispatcher::class);
+        $logger = app(LoggerInterface::class);
         $guardName = 'external-foo';
-        $guard = new ExternalAuthGuard($config, $provider, $input, $dispatcher, $guardName);
+        $guard = new ExternalAuthGuard($config, $provider, $input, $dispatcher, $guardName, $logger);
         $this->assertEquals($config, $guard->config);
         $this->assertEquals($provider, $guard->getProvider());
         $this->assertEquals($input, $guard->input);
         $this->assertEquals($dispatcher, $guard->dispatcher);
         $this->assertEquals($guardName, $guard->guardName);
+        $this->assertEquals($logger, $guard->logger);
     }
 
     /**
@@ -94,6 +99,50 @@ class ExternalAuthGuardTest extends \Orchestra\Testbench\TestCase
         $guard->setUser($user);
         $this->assertEquals($user, $guard->user());
         $this->assertEquals($user, $guard->user());
+    }
+
+    /**
+     * @test
+     */
+    public function userLogsInputAndAttributesWhenLogInputIsTrueAndAttributesAreMissing()
+    {
+        $auth = app('auth');
+        $config = AuthConfig::fromArray([
+            'id' => 'test-external-auth',
+            'attributeMap' => [
+                'name' => ['required' => true],
+                'email' => ['required' => true],
+                'username' => ['required' => false],
+            ],
+            'logInput' => 1,
+        ]);
+        $provider = new TransientUserProvider(TransientUser::class);
+        $input = ['name' => 'test name'];
+        $logger = Mockery::mock(LoggerInterface::class, fn (MockInterface $mock) => $mock->expects('log')->times(3));
+        $guard = new ExternalAuthGuard($config, $provider, $input, app(Dispatcher::class), 'web', $logger);
+        $guard->user();
+    }
+
+    /**
+     * @test
+     */
+    public function userLogsInputAndNotAttributesWhenLogInputIsTrueAndAttributesAreNotMissing()
+    {
+        $auth = app('auth');
+        $config = AuthConfig::fromArray([
+            'id' => 'test-external-auth',
+            'attributeMap' => [
+                'name' => ['required' => true],
+                'email' => ['required' => true],
+                'username' => ['required' => false],
+            ],
+            'logInput' => 1,
+        ]);
+        $provider = new TransientUserProvider(TransientUser::class);
+        $input = ['name' => 'test name', 'email' => 'test@example.com', 'username' => 'admin'];
+        $logger = Mockery::mock(LoggerInterface::class, fn (MockInterface $mock) => $mock->expects('log')->times(1));
+        $guard = new ExternalAuthGuard($config, $provider, $input, app(Dispatcher::class), 'web', $logger);
+        $guard->user();
     }
 
     /**
