@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Config\Repository;
+use Psr\Log\LoggerInterface;
 use SamYapp\LaravelExternalAuth\ExternalAuthGuard;
 use SamYapp\LaravelExternalAuth\ExternalAuthServiceProvider;
 use SamYapp\LaravelExternalAuth\TransientUserProvider;
@@ -53,6 +54,15 @@ class ExternalAuthServiceProviderTest extends \Orchestra\Testbench\TestCase
     public function ServiceProviderRegistersGuard()
     {
         $this->assertInstanceOf(ExternalAuthGuard::class, auth()->guard('web'));
+    }
+
+    /**
+     * @test
+     */
+    public function ServiceProviderPassesALoggerToTheGuard()
+    {
+        $provider = auth()->guard('web');
+        $this->assertInstanceOf(LoggerInterface::class, $provider->logger);
     }
 
     protected function useTransientUserProvider($app)

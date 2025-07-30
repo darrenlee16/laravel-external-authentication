@@ -13,7 +13,7 @@ your user model based on those set via the external identity provider.
 
 ## Security
 
-If you rely on HTTP headers to determine whether or not a user is authenticated
+If you rely on HTTP headers to determine if a user is authenticated
 you *must* ensure that these headers have been sent to your Laravel app from a trusted source
 and not spoofed by the client.
 
@@ -82,8 +82,11 @@ You can enable logging of this data (using your app's Laravel logging configurat
 `'logInput' => true,` in your config. You must also ensure that `'logLevel'` is set at least
 to the minimum level that your app's logging level is (e.g. info, debug, warning, etc).
 
+When not all user attributes are found, a list of both matched and missing attributes
+will also be logged.
+
 Be aware that this will (except when developmentMode = true) dump the contents of Request::server()
-into your Laravel logs so it should only be enabled when essential for troubleshooting.
+into your Laravel logs so should only be enabled when essential for troubleshooting.
 
 ## Development / Testing Configuration
 

@@ -10,6 +10,8 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Log\Logger;
+use Psr\Log\LoggerInterface;
 use SamYapp\LaravelExternalAuth\Events\IncompleteAuthenticationAttributes;
 use SamYapp\LaravelExternalAuth\Events\UnknownUserAuthenticating;
 
@@ -34,6 +36,9 @@ class ExternalAuthGuard implements Guard
     /** @var string - the name of this guard in the auth configuration (default is 'web') */
     public string $guardName;
 
+    /** @var LoggerInterface|null - logger to log things with */
+    public ?LoggerInterface $logger;
+
     /** @var bool - true if logout() has been called in the current request, unless login() has since been called */
     protected $loggedOut = false;
 
@@ -45,6 +50,7 @@ class ExternalAuthGuard implements Guard
      * @param array $input - The input to process (e.g. Request::server() or similar)
      * @param Dispatcher $dispatcher - The event dispatcher to dispatch events with
      * @param string $name - The name of the guard in the config/auth.php
+     * @param ?LoggerInterface $logger - Logger to use
      */
     public function __construct(
         AuthConfig  $config,
@@ -52,6 +58,7 @@ class ExternalAuthGuard implements Guard
         array     $input,
         Dispatcher $dispatcher,
         string $name = 'web',
+        ?LoggerInterface $logger = null,
     )
     {
         $this->setProvider($provider);
@@ -59,6 +66,7 @@ class ExternalAuthGuard implements Guard
         $this->input = $input;
         $this->dispatcher = $dispatcher;
         $this->guardName = $name;
+        $this->logger = $logger;
     }
 
     /**
@@ -68,6 +76,9 @@ class ExternalAuthGuard implements Guard
     {
         // if we already have a user for *this request* we don't need to redo everything
         if (!$this->loggedOut && is_null($this->user)) {
+            if ($this->config->logInput) {
+                $this->logger?->log($this->config->logLevel ?? 'info', 'External authentication input', $this->input);
+            }
             if ($userAttributes = $this->config->attributeMapper()($this->config, $this->input)) {
                 // if we have attributes, do they meet our validation criteria?
                 if (!($missingAttributes = $this->getMissingRequiredAttributes($this->config, $userAttributes))) {
@@ -82,6 +93,14 @@ class ExternalAuthGuard implements Guard
                     }
                 } else {
                     // attributes present but missing some required ones
+                    // log if desired, and dispatch an event so the app can further handle this if desired
+                    if ($this->config->logInput) {
+                        $this->logger?->log($this->config->logLevel ?? 'info', 'Found Attributes: ', $userAttributes);
+                        $this->logger?->log($this->config->logLevel ?? 'info', 'Missing Attributes: ' . collect($missingAttributes)
+                            ->map(fn ($attr) => $attr->name. ':' . $attr->externalName)
+                            ->join(', ')
+                        );
+                    }
                     $this->dispatcher?->dispatch(new IncompleteAuthenticationAttributes($missingAttributes, $userAttributes, $this));
                 }
             }

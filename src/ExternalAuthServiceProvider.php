@@ -2,17 +2,17 @@
 
 namespace SamYapp\LaravelExternalAuth;
 
-use App\Services\Auth\ExternalGuard;
 use Illuminate\Auth\AuthManager;
+use Illuminate\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider;
+use Psr\Log\LoggerInterface;
 
 class ExternalAuthServiceProvider extends ServiceProvider
 {
-    public function boot(AuthManager $auth, \Illuminate\Config\Repository $config): void
+    public function boot(AuthManager $auth, Repository $config, LoggerInterface $logger): void
     {
         $this->publishes([
             __DIR__.'/../config/external-auth.php' => config_path('external-auth.php'),
@@ -25,7 +25,7 @@ class ExternalAuthServiceProvider extends ServiceProvider
         });
 
         // Register the custom guard driver
-        $auth->extend($externalAuthConfig->id, function (Application $app, string $name) use ($auth, $externalAuthConfig) {
+        $auth->extend($externalAuthConfig->id, function (Application $app, string $name) use ($auth, $externalAuthConfig, $logger) {
             // Cannot run developmentMode in production
             if ($externalAuthConfig->developmentMode && $app->environment('production')) {
                 throw new \InvalidArgumentException(
@@ -35,15 +35,13 @@ class ExternalAuthServiceProvider extends ServiceProvider
             $input = $externalAuthConfig->developmentMode
                 ? $externalAuthConfig->developmentAttributes
                 : $app[Request::class]->server();
-            if ($externalAuthConfig->logInput) {
-                $app[Logger::class]?->log($externalAuthConfig->logLevel ?? 'info', 'External authentication input', $input);
-            }
             return new ExternalAuthGuard(
                 $externalAuthConfig,
                 $auth->createUserProvider($externalAuthConfig->userProvider),
                 $input,
                 $app->get(Dispatcher::class),//dispatcher,
-                $name
+                $name,
+                $logger,
             );
         });
     }
