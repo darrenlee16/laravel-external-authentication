@@ -49,6 +49,9 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    on:
+      push:
+        branches: [ "main" ]
     steps:
     - name: Notify Packagist
       run: |
