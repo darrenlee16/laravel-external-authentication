@@ -2,9 +2,12 @@
     "name": "samyapp/laravel-external-authentication",
     "description": "Laravel authentication guard for authentication based on headers or environment variables set by an authenticating reverse proxy.",
     "type": "library",
+    "require": {
+        "illuminate/support": "^10.0|^11.0|^12"
+    },
     "require-dev": {
-        "orchestra/testbench": "^8.0|^9.0",
-        "phpunit/phpunit": "^9.0|^10.5"
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^9.0|^10.5|^11.0"
     },
     "license": "MIT",
     "autoload": {
@@ -23,9 +26,6 @@
             "email": "sam@samyapp.com"
         }
     ],
-    "require": {
-        "illuminate/support": "^10.0|^11.0|^12"
-    },
     "extra": {
         "laravel": {
             "providers": [
