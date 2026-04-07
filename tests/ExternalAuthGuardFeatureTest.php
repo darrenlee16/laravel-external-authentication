@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Event;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use SamYapp\LaravelExternalAuth\DefaultUserCreator;
 use SamYapp\LaravelExternalAuth\Events\IncompleteAuthenticationAttributes;
 use SamYapp\LaravelExternalAuth\Events\UnknownUserAuthenticating;
@@ -88,8 +89,8 @@ class ExternalAuthGuardFeatureTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureTransientUserProviderWithDefaultUserModel
      */
+    #[DefineEnvironment('configureTransientUserProviderWithDefaultUserModel')]
     public function transientUserAuthenticatesWithCorrectAttributesAndDispatchesAuthenticatedEvent()
     {
         Event::fake();
@@ -119,8 +120,8 @@ class ExternalAuthGuardFeatureTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureTransientUserProviderWithTransientUserModel
      */
+    #[DefineEnvironment('configureTransientUserProviderWithTransientUserModel')]
     public function transientUserWithTransientUserModelAuthenticatesWithCorrectAttributesAndDispatchesAuthenticatedEvent()
     {
         Event::fake();
@@ -195,10 +196,10 @@ class ExternalAuthGuardFeatureTest extends \Orchestra\Testbench\TestCase
         $this->assertEquals(static::TEST_ROLES, $user->roles);
     }
 
-    protected function configureMissingRequiredAttributes()
+    protected function configureMissingRequiredAttributes($app)
     {
         // don't set the name which is required
-        app('config')->set('external-auth.developmentAttributes',[
+        $app['config']->set('external-auth.developmentAttributes',[
             'X-TESTING-UID' => static::TEST_EMAIL,
             'X-TESTING-ROLE-0' => static::ADMIN_ROLE,
             'X-TESTING-ROLE-1' => static::USER_ROLE,
@@ -207,8 +208,8 @@ class ExternalAuthGuardFeatureTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureMissingRequiredAttributes
      */
+    #[DefineEnvironment('configureMissingRequiredAttributes')]
     public function existingUserNotAuthenticatedIfAttributesAreMissingAndRelevantEventsDispatched()
     {
         Event::fake();
@@ -226,21 +227,21 @@ class ExternalAuthGuardFeatureTest extends \Orchestra\Testbench\TestCase
         Event::assertNotDispatched(Authenticated::class);
     }
 
-    protected function configureTransientUserProviderAndMissingRequiredAttributes()
+    protected function configureTransientUserProviderAndMissingRequiredAttributes($app)
     {
         // don't set the name which is required
-        app('config')->set('external-auth.developmentAttributes',[
+        $app['config']->set('external-auth.developmentAttributes',[
             'X-TESTING-UID' => static::TEST_EMAIL,
             'X-TESTING-ROLE-0' => static::ADMIN_ROLE,
             'X-TESTING-ROLE-1' => static::USER_ROLE,
         ]);
-        app('config')->set('auth.providers.users.driver', 'transient');
+        $app['config']->set('auth.providers.users.driver', 'transient');
     }
 
     /**
      * @test
-     * @define-env configureTransientUserProviderAndMissingRequiredAttributes
      */
+    #[DefineEnvironment('configureTransientUserProviderAndMissingRequiredAttributes')]
     public function transientUserNotAuthenticatedIfAttributesAreMissingAndRelevantEventsDispatched()
     {
         Event::fake();

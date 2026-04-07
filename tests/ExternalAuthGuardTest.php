@@ -13,6 +13,7 @@ use Mockery;
 use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use SamYapp\LaravelExternalAuth\AuthConfig;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use SamYapp\LaravelExternalAuth\ExternalAuthGuard;
 use SamYapp\LaravelExternalAuth\ExternalAuthServiceProvider;
 use SamYapp\LaravelExternalAuth\TransientUser;
@@ -171,8 +172,8 @@ class ExternalAuthGuardTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureTransientUserConfig
      */
+    #[DefineEnvironment('configureTransientUserConfig')]
     public function userReturnsTransientUserWhenConfiguredAndAttributesPresent()
     {
         $guard = app('auth')->guard();
@@ -298,8 +299,8 @@ class ExternalAuthGuardTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureTransientUserConfig
      */
+    #[DefineEnvironment('configureTransientUserConfig')]
     public function loginWorksAgainAfterALogout()
     {
         $guard = app('auth')->guard();
@@ -313,8 +314,8 @@ class ExternalAuthGuardTest extends \Orchestra\Testbench\TestCase
 
     /**
      * @test
-     * @define-env configureTransientUserConfig
      */
+    #[DefineEnvironment('configureTransientUserConfig')]
     public function logoutUnsetsTheUserAndEnsuresUserReturnsNullForRestOfRequest()
     {
         $guard = app('auth')->guard();
